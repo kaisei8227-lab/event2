@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${pageTitle})}"></head>
+<body>
+<header th:replace="~{fragments :: header}"></header>
+
+<main class="container narrow">
+    <h1 th:text="${view.full} ? 'キャンセル待ちの登録' : '予約情報の入力'">予約情報の入力</h1>
+
+    <!-- 満席のときはキャンセル待ちになることを先に伝える -->
+    <p th:if="${view.full}" class="flash flash-wait">
+        このイベントは満席です。登録すると<strong th:text="'キャンセル待ち ' + ${view.waitingCount + 1} + '番目'">キャンセル待ち 1番目</strong>になり、
+        空きが出たら順番に自動で予約確定になります。
+    </p>
+
+    <!-- 予約するイベント -->
+    <section class="card event-summary">
+        <p class="board-company"><span class="host-label">主催</span><span th:text="${view.event.companyName}">〇〇株式会社</span></p>
+        <h2 th:text="${view.event.title}">就職説明会 A社</h2>
+        <p class="board-desc" th:if="${view.event.description}" th:text="${view.event.description}">説明</p>
+        <p class="board-meta">
+            <span th:text="${#temporals.format(view.event.startAt, 'yyyy年M月d日(E) HH:mm')}">日時</span>
+            ・<span th:text="${view.event.location}">会場</span>
+            ・<span th:text="${view.full} ? '満席' : '残り ' + ${view.remaining} + '席'">残り</span>
+            ・予約期限 <span th:text="${#temporals.format(view.event.deadline, 'M月d日(E) HH:mm')}">期限</span>
+        </p>
+    </section>
+
+    <form th:action="@{/events/{id}/reserve(id=${view.event.id})}" th:object="${reservationForm}"
+          method="post" id="reserve-form" class="card" novalidate>
+
+        <div class="field">
+            <label>メールアドレス</label>
+            <p class="readonly" th:text="${loginUser.email}">student1@example.com</p>
+        </div>
+
+        <div class="field">
+            <label for="fullName">氏名 <span class="req">必須</span></label>
+            <input type="text" th:field="*{fullName}" autocomplete="name" placeholder="山田 太郎" required>
+            <p class="field-error" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></p>
+        </div>
+
+        <div class="field">
+            <label for="fullNameKana">フリガナ <span class="req">必須</span></label>
+            <input type="text" th:field="*{fullNameKana}" placeholder="ヤマダ タロウ" required>
+            <p class="field-msg" id="kana-msg"></p>
+            <p class="field-error" th:if="${#fields.hasErrors('fullNameKana')}" th:errors="*{fullNameKana}"></p>
+        </div>
+
+        <div class="field">
+            <label for="phone">電話番号 <span class="req">必須</span></label>
+            <input type="tel" th:field="*{phone}" autocomplete="tel" placeholder="090-1234-5678" required>
+            <p class="field-msg" id="phone-msg"></p>
+            <p class="field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></p>
+        </div>
+
+        <div class="field">
+            <label for="school">学校名</label>
+            <input type="text" th:field="*{school}" placeholder="〇〇専門学校">
+            <p class="field-error" th:if="${#fields.hasErrors('school')}" th:errors="*{school}"></p>
+        </div>
+
+        <div class="field">
+            <label for="note">備考</label>
+            <textarea th:field="*{note}" rows="3" placeholder="質問や連絡事項があれば"></textarea>
+            <p class="field-error" th:if="${#fields.hasErrors('note')}" th:errors="*{note}"></p>
+        </div>
+
+        <div class="actions">
+            <a th:href="@{/events}" class="btn-outline">一覧に戻る</a>
+            <button type="submit" id="reserve-btn" class="btn" disabled th:text="${view.full} ? 'キャンセル待ちに登録' : '予約完了'">予約完了</button>
+        </div>
+    </form>
+</main>
+
+<script th:src="@{/js/common.js}"></script>
+<script th:src="@{/js/reserve.js}"></script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${pageTitle})}"></head>
+<body>
+<header th:replace="~{fragments :: header}"></header>
+
+<main class="container narrow">
+    <section class="card complete">
+
+        <!-- 予約確定のとき -->
+        <th:block th:if="${reservation.confirmed}">
+            <div class="complete-mark">✓</div>
+            <h1>予約が完了しました</h1>
+            <p>当日は開始時刻までに会場へお越しください。</p>
+        </th:block>
+
+        <!-- キャンセル待ちのとき -->
+        <th:block th:if="${reservation.waiting}">
+            <div class="complete-mark is-waiting" th:text="${position}">2</div>
+            <h1>キャンセル待ちに登録しました</h1>
+            <p>
+                現在 <strong th:text="${position} + '番目'">2番目</strong> です。<br>
+                空きが出ると順番に自動で予約確定になります。状況はマイページで確認できます。
+            </p>
+        </th:block>
+
+        <dl class="detail">
+            <dt>状態</dt>
+            <dd th:text="${reservation.status.label}">予約確定</dd>
+            <dt>予約番号</dt>
+            <dd th:text="${reservation.id}">1</dd>
+            <dt>イベント</dt>
+            <dd th:text="${reservation.event.title}">就職説明会 A社</dd>
+            <dt>日時</dt>
+            <dd th:text="${#temporals.format(reservation.event.startAt, 'yyyy年M月d日(E) HH:mm')}">日時</dd>
+            <dt>会場</dt>
+            <dd th:text="${reservation.event.location}">会場</dd>
+            <dt>主催</dt>
+            <dd th:text="${reservation.event.companyName}">企業名</dd>
+            <dt>氏名</dt>
+            <dd th:text="${reservation.fullName} + '（' + ${reservation.fullNameKana} + '）'">山田 太郎</dd>
+            <dt>電話番号</dt>
+            <dd th:text="${reservation.phone}">090-1234-5678</dd>
+        </dl>
+
+        <div class="calendar-links" th:if="${reservation.confirmed}">
+            <p class="field-hint">カレンダーに追加（開始から1時間の予定として登録されます）</p>
+            <a th:href="${googleCalendarUrl}" target="_blank" rel="noopener" class="btn-outline">Googleカレンダー</a>
+            <a th:href="@{/events/{id}/calendar.ics(id=${reservation.event.id})}" class="btn-outline">iPhone・Outlook など（.ics）</a>
+        </div>
+
+        <div class="complete-actions">
+            <a th:href="@{/mypage}" class="btn">マイページで確認</a>
+            <a th:href="@{/events}" class="btn-outline">イベント一覧に戻る</a>
+        </div>
+    </section>
+</main>
+</body>
+</html>

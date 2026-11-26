@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('エラー')}"></head>
+<body class="center-page">
+<main class="card auth-card">
+    <h1 th:text="${status == 403} ? 'このページは表示できません' : (${status == 404} ? 'ページが見つかりません' : 'エラーが発生しました')">エラー</h1>
+    <p th:text="'エラーコード: ' + ${status}">エラーコード</p>
+    <a th:href="@{/events}" class="btn">イベント一覧へ</a>
+</main>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('イベント一覧')}"></head>
+<body>
+<header th:replace="~{fragments :: header}"></header>
+
+<main class="container">
+    <h1>イベント一覧</h1>
+    <div th:replace="~{fragments :: flash}"></div>
+
+    <!-- 検索・絞り込み（GETで送るので、検索結果のURLをそのまま共有・ブックマークできる）-->
+    <form th:action="@{/events}" th:object="${search}" method="get" class="card search-form" role="search">
+        <div class="search-keyword">
+            <label for="q" class="visually-hidden">キーワード</label>
+            <input type="search" th:field="*{q}" placeholder="キーワードで検索" enterkeyhint="search">
+            <button type="submit" class="btn">検索</button>
+        </div>
+        <div class="search-options">
+            <div class="search-date">
+                <span class="search-date-label">開催日</span>
+                <input type="date" th:field="*{from}" aria-label="開催日（から）">
+                <span>〜</span>
+                <input type="date" th:field="*{to}" aria-label="開催日（まで）">
+            </div>
+            <label class="search-check">
+                <input type="checkbox" th:field="*{available}">
+                <span>空きありのみ</span>
+            </label>
+        </div>
+    </form>
+
+    <p class="result-count">
+        <span th:text="${#lists.size(events)} + '件のイベント'">3件のイベント</span>
+        <a th:if="${search.filtered}" th:href="@{/events}" class="clear-link">条件をクリア</a>
+    </p>
+
+    <p th:if="${#lists.isEmpty(events) and !search.filtered}" class="empty">現在、受付中のイベントはありません。</p>
+    <p th:if="${#lists.isEmpty(events) and search.filtered}" class="empty">条件に合うイベントが見つかりませんでした。</p>
+
+    <!-- 掲示板：企業が作成したイベントが並ぶ（予約期限を過ぎたものは出ない）-->
+    <ul class="board">
+        <li th:each="v : ${events}" class="board-item">
+            <div class="board-main">
+                <div class="board-top">
+                    <p class="board-company"><span class="host-label">主催</span><span th:text="${v.event.companyName}">〇〇株式会社</span></p>
+                    <!-- お気に入り（学生だけ）-->
+                    <form th:unless="${loginUser.company}" th:action="@{/events/{id}/favorite(id=${v.event.id})}"
+                          method="post" class="inline">
+                        <input type="hidden" name="back" th:value="${currentPath}">
+                        <button type="submit" class="fav-star" th:classappend="${v.favorite} ? 'is-on'"
+                                th:attr="aria-pressed=${v.favorite}"
+                                th:title="${v.favorite} ? 'お気に入りから外す' : 'お気に入りに追加'"
+                                th:aria-label="${v.favorite} ? 'お気に入りから外す' : 'お気に入りに追加'"
+                                th:text="${v.favorite} ? '★' : '☆'">☆</button>
+                    </form>
+                </div>
+                <h2 class="board-title">
+                    <a th:href="@{/events/{id}(id=${v.event.id})}" th:text="${v.event.title}">就職説明会 A社</a>
+                </h2>
+                <p class="board-meta">
+                    開催 <span th:text="${#temporals.format(v.event.startAt, 'M月d日(E) HH:mm')}">12月10日 13:00</span>
+                    ・<span th:text="${v.event.location}">301 実習室</span>
+                    ・定員 <span th:text="${v.event.capacity}">30</span>名
+                </p>
+                <!-- 一覧では説明を2行まで。全文は詳細ページで -->
+                <p class="board-desc is-clamped" th:if="${v.event.description}" th:text="${v.event.description}">説明</p>
+                <p class="board-deadline">
+                    予約期限 <span th:text="${#temporals.format(v.event.deadline, 'M月d日(E) HH:mm')}">12月9日 18:00</span>
+                    <span th:if="${v.event.deadlineSoon}" class="badge badge-soon">締切間近</span>
+                </p>
+                <a th:href="@{/events/{id}(id=${v.event.id})}" class="more-link">詳しく見る →</a>
+            </div>
+
+            <div class="board-side">
+                <!-- 残り席数 -->
+                <span th:if="${!v.full}" class="seat" th:text="'残り ' + ${v.remaining} + '席'">残り 5席</span>
+                <span th:if="${v.full}" class="seat seat-full">
+                    満席<small th:if="${v.waitingCount > 0}" th:text="'（待ち ' + ${v.waitingCount} + '人）'">（待ち 2人）</small>
+                </span>
+
+                <!-- 企業アカウントには予約ボタンを出さない -->
+                <th:block th:unless="${loginUser.company}">
+                    <a th:if="${v.reservable}" th:href="@{/events/{id}/reserve(id=${v.event.id})}"
+                       class="btn">予約する</a>
+                    <a th:if="${v.waitlistable}" th:href="@{/events/{id}/reserve(id=${v.event.id})}"
+                       class="btn btn-wait">キャンセル待ち</a>
+                    <a th:if="${v.reservedByMe}" th:href="@{/mypage}" class="btn btn-done">予約済み</a>
+                    <a th:if="${v.waitingByMe}" th:href="@{/mypage}" class="btn btn-waiting">キャンセル待ち中</a>
+                </th:block>
+            </div>
+        </li>
+    </ul>
+</main>
+</body>
+</html>

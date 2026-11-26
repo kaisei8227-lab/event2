@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('マイページ')}"></head>
+<body>
+<header th:replace="~{fragments :: header}"></header>
+
+<main class="container narrow">
+    <h1>マイページ</h1>
+    <div th:replace="~{fragments :: flash}"></div>
+
+    <h2 class="section-title">これからのイベント</h2>
+    <p th:if="${#lists.isEmpty(upcoming)}" class="empty">
+        予約しているイベントはありません。<a th:href="@{/events}">イベント一覧</a>から予約できます。
+    </p>
+
+    <ul class="my-list">
+        <li th:each="v : ${upcoming}" class="my-item"
+            th:classappend="${v.reservation.waiting} ? 'is-waiting'">
+
+            <!-- 状態のバッジ -->
+            <p class="my-status">
+                <span th:if="${v.reservation.confirmed and !v.reservation.promoted}" class="badge badge-ok">予約確定</span>
+                <span th:if="${v.reservation.promoted}" class="badge badge-ok">繰り上げで予約確定</span>
+                <span th:if="${v.reservation.waiting}" class="badge badge-wait"
+                      th:text="'キャンセル待ち ' + ${v.waitingPosition} + '番目'">キャンセル待ち 2番目</span>
+            </p>
+
+            <p class="board-company"><span class="host-label">主催</span><span th:text="${v.event.companyName}">〇〇株式会社</span></p>
+            <h3 class="board-title"><a th:href="@{/events/{id}(id=${v.event.id})}" th:text="${v.event.title}">会社説明会</a></h3>
+            <p class="board-meta">
+                開催 <span th:text="${#temporals.format(v.event.startAt, 'M月d日(E) HH:mm')}">12月10日 13:00</span>
+                ・<span th:text="${v.event.location}">301 実習室</span>
+            </p>
+            <p class="board-meta">
+                予約期限 <span th:text="${#temporals.format(v.event.deadline, 'M月d日(E) HH:mm')}">12月9日 18:00</span>
+            </p>
+
+            <div class="my-actions">
+                <a th:if="${v.reservation.confirmed}" th:href="@{/events/{id}/calendar.ics(id=${v.event.id})}"
+                   class="btn-small">カレンダーに追加</a>
+                <form th:if="${v.cancellable}" th:action="@{/reservations/{id}/cancel(id=${v.reservation.id})}"
+                      method="post" class="inline js-confirm"
+                      th:data-message="${v.reservation.waiting}
+                          ? '「' + ${v.event.title} + '」のキャンセル待ちを取り消します。よろしいですか？'
+                          : '「' + ${v.event.title} + '」の予約をキャンセルします。キャンセル待ちの人が繰り上がるため、元に戻せません。よろしいですか？'">
+                    <button type="submit" class="btn-danger"
+                            th:text="${v.reservation.waiting} ? 'キャンセル待ちをやめる' : '予約をキャンセル'">予約をキャンセル</button>
+                </form>
+                <span th:unless="${v.cancellable}" class="field-hint">予約期限を過ぎたためキャンセルできません</span>
+            </div>
+        </li>
+    </ul>
+
+    <!-- お気に入り（検討リスト）-->
+    <h2 class="section-title">お気に入り</h2>
+    <p th:if="${#lists.isEmpty(favorites)}" class="empty">
+        お気に入りはまだありません。イベント一覧の ☆ を押すと追加できます。
+    </p>
+    <ul class="my-list" th:unless="${#lists.isEmpty(favorites)}">
+        <li th:each="e : ${favorites}" class="my-item fav-item" th:classappend="${e.closed} ? 'is-closed'">
+            <p class="my-status">
+                <span th:if="${e.deadlineSoon}" class="badge badge-soon">締切間近</span>
+                <span th:if="${e.closed}" class="badge">受付終了</span>
+            </p>
+            <p class="board-company"><span class="host-label">主催</span><span th:text="${e.companyName}">〇〇株式会社</span></p>
+            <h3 class="board-title"><a th:href="@{/events/{id}(id=${e.id})}" th:text="${e.title}">ポートフォリオ講座</a></h3>
+            <p class="board-meta">
+                開催 <span th:text="${#temporals.format(e.startAt, 'M月d日(E) HH:mm')}">12月12日 15:00</span>
+                ・予約期限 <span th:classappend="${e.deadlineSoon} ? 'text-soon'"
+                               th:text="${#temporals.format(e.deadline, 'M月d日(E) HH:mm')}">12月11日 18:00</span>
+            </p>
+            <div class="my-actions">
+                <a th:unless="${e.closed}" th:href="@{/events/{id}(id=${e.id})}" class="btn-small">詳細・予約</a>
+                <form th:action="@{/events/{id}/favorite(id=${e.id})}" method="post" class="inline">
+                    <input type="hidden" name="back" value="/mypage">
+                    <button type="submit" class="btn-small">お気に入りから外す</button>
+                </form>
+            </div>
+        </li>
+    </ul>
+
+    <th:block th:unless="${#lists.isEmpty(past)}">
+        <h2 class="section-title">終了したイベント</h2>
+        <ul class="my-list is-past">
+            <li th:each="v : ${past}" class="my-item">
+                <p class="my-status">
+                    <span class="badge" th:text="${v.reservation.status.label}">予約確定</span>
+                </p>
+                <h3 class="board-title" th:text="${v.event.title}">会社説明会</h3>
+                <p class="board-meta">
+                    <span th:text="${#temporals.format(v.event.startAt, 'yyyy年M月d日(E) HH:mm')}">日時</span>
+                    ・<span th:text="${v.event.companyName}">企業</span>
+                </p>
+            </li>
+        </ul>
+    </th:block>
+</main>
+
+<script th:src="@{/js/confirm.js}"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  イベントの入力欄（作成画面と編集画面で共通）。
+  th:object="${eventForm}" のついた form の中で使う。
+-->
+<th:block th:fragment="fields">
+            <div class="field">
+                <label for="title">イベント名 <span class="req">必須</span></label>
+                <input type="text" th:field="*{title}" maxlength="100" placeholder="会社説明会" required>
+                <p class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
+            </div>
+
+            <div class="field">
+                <label for="capacity">何人まで参加できるか <span class="req">必須</span></label>
+                <div class="with-unit">
+                    <input type="number" th:field="*{capacity}" min="1" max="1000" placeholder="30" required>
+                    <span>人</span>
+                </div>
+                <p class="field-error" th:if="${#fields.hasErrors('capacity')}" th:errors="*{capacity}"></p>
+            </div>
+
+            <div class="field">
+                <label for="description">イベント説明</label>
+                <textarea th:field="*{description}" rows="4" maxlength="1000"
+                          placeholder="内容・持ち物など"></textarea>
+                <p class="field-hint"><span id="desc-count">0</span> / 1000文字</p>
+                <p class="field-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
+            </div>
+
+            <div class="field">
+                <label for="location">会場 <span class="req">必須</span></label>
+                <input type="text" th:field="*{location}" maxlength="100" placeholder="301 実習室 / オンライン" required>
+                <p class="field-error" th:if="${#fields.hasErrors('location')}" th:errors="*{location}"></p>
+            </div>
+
+            <div class="field">
+                <label for="startAt">イベント日時 <span class="req">必須</span></label>
+                <input type="datetime-local" th:field="*{startAt}" required>
+                <p class="field-error" th:if="${#fields.hasErrors('startAt')}" th:errors="*{startAt}"></p>
+            </div>
+
+            <div class="field">
+                <label for="deadline">予約期限 <span class="req">必須</span></label>
+                <input type="datetime-local" th:field="*{deadline}" required>
+                <p class="field-hint">この日時を過ぎると予約できなくなります（イベント日時より前）</p>
+                <p class="field-msg" id="deadline-msg"></p>
+                <p class="field-error" th:if="${#fields.hasErrors('deadline')}" th:errors="*{deadline}"></p>
+            </div>
+</th:block>
+</body>
+</html>

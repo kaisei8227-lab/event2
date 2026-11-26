@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('イベント管理')}"></head>
+<body>
+<header th:replace="~{fragments :: header}"></header>
+
+<main class="container">
+    <h1 th:text="${loginUser.displayName} + ' のイベント管理'">イベント管理</h1>
+    <div th:replace="~{fragments :: flash}"></div>
+
+    <div class="admin-grid">
+        <!-- イベント作成フォーム -->
+        <form th:action="@{/admin/events}" th:object="${eventForm}" method="post" id="event-form"
+              class="card" novalidate>
+            <h2>イベントを作成する</h2>
+
+            <th:block th:replace="~{admin/event-fields :: fields}"></th:block>
+
+            <button type="submit" id="event-btn" class="btn btn-block" disabled>掲示板に追加する</button>
+        </form>
+
+        <!-- 作成済みイベント -->
+        <section class="card">
+            <h2>掲示中のイベント</h2>
+            <p th:if="${#lists.isEmpty(events)}" class="empty">まだイベントがありません。</p>
+            <table th:unless="${#lists.isEmpty(events)}" class="table">
+                <thead>
+                <tr><th>イベント</th><th>会場</th><th>日時</th><th>予約期限</th><th>予約</th><th>待ち</th><th></th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="v : ${events}">
+                    <td class="cell-title">
+                        <a th:href="@{/admin/events/{id}/reservations(id=${v.event.id})}"
+                           th:text="${v.event.title}">会社説明会</a>
+                    </td>
+                    <td data-label="会場" th:text="${v.event.location}">301 実習室</td>
+                    <td data-label="日時" th:text="${#temporals.format(v.event.startAt, 'M/d HH:mm')}">12/10 13:00</td>
+                    <td data-label="予約期限">
+                        <span th:text="${#temporals.format(v.event.deadline, 'M/d HH:mm')}">12/9 18:00</span>
+                        <span th:if="${v.event.closed}" class="tag">締切</span>
+                    </td>
+                    <td data-label="予約" th:text="${v.reservedCount} + ' / ' + ${v.event.capacity} + '人'">3 / 30</td>
+                    <td data-label="キャンセル待ち" th:text="${v.waitingCount} + '人'">0人</td>
+                    <td class="cell-actions">
+                        <a th:href="@{/admin/events/{id}/edit(id=${v.event.id})}" class="btn-small">編集</a>
+                        <form th:action="@{/admin/events/{id}/delete(id=${v.event.id})}" method="post"
+                              class="inline js-confirm" data-message="このイベントと予約をすべて削除します。よろしいですか？">
+                            <button type="submit" class="btn-danger">削除</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <p class="field-hint">イベント名を押すと予約者の一覧（CSVダウンロード）が見られます</p>
+        </section>
+    </div>
+</main>
+
+<script th:src="@{/js/common.js}"></script>
+<script th:src="@{/js/admin.js}"></script>
+<script th:src="@{/js/confirm.js}"></script>
+</body>
+</html>

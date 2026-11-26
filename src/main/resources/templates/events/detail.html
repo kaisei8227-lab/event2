@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${view.event.title})}"></head>
+<body>
+<header th:replace="~{fragments :: header}"></header>
+
+<main class="container narrow">
+    <p><a th:href="@{/events}">← イベント一覧に戻る</a></p>
+    <div th:replace="~{fragments :: flash}"></div>
+
+    <article class="card detail-card">
+        <div class="detail-head">
+            <p class="board-company"><span class="host-label">主催</span><span th:text="${view.event.companyName}">〇〇株式会社</span></p>
+
+            <!-- お気に入り（学生だけ）-->
+            <form th:unless="${loginUser.company}" th:action="@{/events/{id}/favorite(id=${view.event.id})}"
+                  method="post" class="inline">
+                <input type="hidden" name="back" th:value="${currentPath}">
+                <button type="submit" class="fav-btn" th:classappend="${view.favorite} ? 'is-on'"
+                        th:attr="aria-pressed=${view.favorite}"
+                        th:title="${view.favorite} ? 'お気に入りから外す' : 'お気に入りに追加'">
+                    <span aria-hidden="true" th:text="${view.favorite} ? '★' : '☆'">☆</span>
+                    <span th:text="${view.favorite} ? 'お気に入り済み' : 'お気に入り'">お気に入り</span>
+                </button>
+            </form>
+        </div>
+
+        <h1 class="detail-title" th:text="${view.event.title}">会社説明会</h1>
+
+        <!-- 状態のバッジ -->
+        <p class="detail-badges">
+            <span th:if="${view.event.closed}" class="badge">受付終了</span>
+            <span th:if="${view.event.deadlineSoon}" class="badge badge-soon">締切間近</span>
+            <span th:if="${view.reservedByMe}" class="badge badge-ok">予約済み</span>
+            <span th:if="${view.waitingByMe}" class="badge badge-wait">キャンセル待ち中</span>
+        </p>
+
+        <dl class="detail detail-info">
+            <dt>開催日時</dt>
+            <dd th:text="${#temporals.format(view.event.startAt, 'yyyy年M月d日(E) HH:mm')}">2026年12月10日(木) 13:00</dd>
+            <dt>会場</dt>
+            <dd th:text="${view.event.location}">301 実習室</dd>
+            <dt>参加人数</dt>
+            <dd>
+                <span th:text="${view.reservedCount} + ' / ' + ${view.event.capacity} + '人'">12 / 30人</span>
+                <span th:if="${!view.full}" class="seat" th:text="'（残り ' + ${view.remaining} + '席）'">（残り 18席）</span>
+                <span th:if="${view.full}" class="seat seat-full">
+                    （満席<th:block th:if="${view.waitingCount > 0}" th:text="'・待ち ' + ${view.waitingCount} + '人'"></th:block>）
+                </span>
+            </dd>
+            <dt>予約期限</dt>
+            <dd th:classappend="${view.event.deadlineSoon} ? 'text-soon'"
+                th:text="${#temporals.format(view.event.deadline, 'yyyy年M月d日(E) HH:mm')}">2026年12月9日(水) 18:00</dd>
+        </dl>
+
+        <section th:if="${view.event.description}" class="detail-desc">
+            <h2>イベント説明</h2>
+            <p th:text="${view.event.description}">説明</p>
+        </section>
+
+        <!-- 予約ボタン（学生だけ）-->
+        <div class="detail-actions" th:unless="${loginUser.company}">
+            <a th:if="${view.reservable}" th:href="@{/events/{id}/reserve(id=${view.event.id})}" class="btn">予約する</a>
+            <a th:if="${view.waitlistable}" th:href="@{/events/{id}/reserve(id=${view.event.id})}" class="btn btn-wait">キャンセル待ちに登録</a>
+            <a th:if="${view.reservedByMe or view.waitingByMe}" th:href="@{/mypage}" class="btn-outline">マイページで確認・キャンセル</a>
+        </div>
+
+        <!-- カレンダーに追加 -->
+        <div class="calendar-links">
+            <p class="field-hint">カレンダーに追加（開始から1時間の予定として登録されます）</p>
+            <a th:href="${googleCalendarUrl}" target="_blank" rel="noopener" class="btn-outline">Googleカレンダー</a>
+            <a th:href="@{/events/{id}/calendar.ics(id=${view.event.id})}" class="btn-outline">iPhone・Outlook など（.ics）</a>
+        </div>
+    </article>
+</main>
+</body>
+</html>

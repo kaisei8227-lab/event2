@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+
+<!-- 各ページの <head> -->
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' | イベント予約'">イベント予約</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+<!-- 上部のヘッダー -->
+<header th:fragment="header" class="app-header" id="app-header">
+    <div class="app-header-inner">
+        <a class="app-title" th:href="@{/events}">イベント予約</a>
+        <!-- スマホではこのボタンでメニューを開閉する（menu.js）-->
+        <button type="button" class="menu-toggle" id="menu-toggle" th:if="${loginUser != null}"
+                aria-label="メニューを開く" aria-expanded="false" aria-controls="app-nav">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+    <nav th:if="${loginUser != null}" class="app-nav" id="app-nav">
+        <a th:if="${loginUser.company}" th:href="@{/admin/events}">イベント管理</a>
+        <a th:href="@{/events}">イベント一覧</a>
+        <a th:unless="${loginUser.company}" th:href="@{/mypage}">マイページ</a>
+        <a th:href="@{/account}">アカウント</a>
+        <span class="app-user" th:text="'[' + ${loginUser.role.label} + '] ' + ${loginUser.displayName} + ' さん'">user さん</span>
+        <form th:action="@{/logout}" method="post" class="inline">
+            <button type="submit" class="btn-outline">ログアウト</button>
+        </form>
+    </nav>
+    <script th:if="${loginUser != null}" th:src="@{/js/menu.js}"></script>
+</header>
+
+<!-- 完了・エラーのメッセージ -->
+<div th:fragment="flash">
+    <p th:if="${message}" class="flash flash-ok" th:text="${message}"></p>
+    <p th:if="${error}" class="flash flash-error" th:text="${error}"></p>
+</div>
+
+</body>
+</html>

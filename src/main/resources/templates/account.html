@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('アカウント')}"></head>
+<body>
+<header th:replace="~{fragments :: header}"></header>
+
+<main class="container narrow">
+    <h1>アカウント</h1>
+    <div th:replace="~{fragments :: flash}"></div>
+
+    <!-- 登録内容 -->
+    <section class="card account-section">
+        <h2>登録内容</h2>
+        <dl class="detail">
+            <dt>種類</dt>
+            <dd th:text="${member.role.label}">学生</dd>
+            <dt>メール</dt>
+            <dd th:text="${member.email}">student1@example.com</dd>
+            <th:block th:if="${member.company}">
+                <dt>企業名</dt>
+                <dd th:text="${member.companyName}">〇〇株式会社</dd>
+            </th:block>
+            <dt>登録日</dt>
+            <dd th:text="${#temporals.format(member.createdAt, 'yyyy年M月d日')}">2026年11月26日</dd>
+        </dl>
+    </section>
+
+    <!-- 企業名の変更（企業だけ）-->
+    <form th:if="${member.company}" th:action="@{/account/company}" th:object="${companyNameForm}"
+          method="post" class="card account-section" novalidate>
+        <h2>企業名の変更</h2>
+        <div class="field">
+            <label for="companyName">企業名</label>
+            <input type="text" th:field="*{companyName}" maxlength="100" autocomplete="organization" required>
+            <p class="field-hint">掲示中のイベントの企業名もいっしょに変わります</p>
+            <p class="field-error" th:if="${#fields.hasErrors('companyName')}" th:errors="*{companyName}"></p>
+        </div>
+        <button type="submit" class="btn">企業名を変更する</button>
+    </form>
+
+    <!-- パスワードの変更 -->
+    <form th:action="@{/account/password}" th:object="${passwordChangeForm}" method="post"
+          id="password-form" class="card account-section" novalidate>
+        <h2>パスワードの変更</h2>
+        <div class="field">
+            <label for="currentPassword">今のパスワード</label>
+            <input type="password" id="currentPassword" name="currentPassword" autocomplete="current-password" required>
+            <p class="field-error" th:if="${#fields.hasErrors('currentPassword')}" th:errors="*{currentPassword}"></p>
+        </div>
+        <div class="field">
+            <label for="newPassword">新しいパスワード</label>
+            <input type="password" id="newPassword" name="newPassword" autocomplete="new-password" required>
+            <p class="field-hint">英字と数字をふくむ8文字以上</p>
+            <p class="field-msg" id="new-msg"></p>
+            <p class="field-error" th:if="${#fields.hasErrors('newPassword')}" th:errors="*{newPassword}"></p>
+        </div>
+        <div class="field">
+            <label for="newPasswordConfirm">新しいパスワード（確認）</label>
+            <input type="password" id="newPasswordConfirm" name="newPasswordConfirm" autocomplete="new-password" required>
+            <p class="field-msg" id="confirm-msg"></p>
+            <p class="field-error" th:if="${#fields.hasErrors('newPasswordConfirm')}" th:errors="*{newPasswordConfirm}"></p>
+        </div>
+        <button type="submit" id="password-btn" class="btn" disabled>パスワードを変更する</button>
+    </form>
+</main>
+
+<script th:src="@{/js/common.js}"></script>
+<script th:src="@{/js/account.js}"></script>
+</body>
+</html>

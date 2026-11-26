@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('予約者一覧')}"></head>
+<body>
+<header th:replace="~{fragments :: header}"></header>
+
+<main class="container">
+    <p><a th:href="@{/admin/events}">← イベント管理に戻る</a></p>
+    <h1 th:text="${event.title} + ' の予約者'">予約者</h1>
+    <p class="board-meta"
+       th:text="'開催 ' + ${#temporals.format(event.startAt, 'yyyy年M月d日(E) HH:mm')}
+                + '・' + ${event.location}
+                + '・予約期限 ' + ${#temporals.format(event.deadline, 'M月d日 HH:mm')}">日時</p>
+
+    <div class="summary-bar">
+        <p>
+            予約確定 <strong th:text="${#lists.size(confirmed)} + ' / ' + ${event.capacity} + '人'">3 / 30人</strong>
+            ・キャンセル待ち <strong th:text="${#lists.size(waiting)} + '人'">0人</strong>
+        </p>
+        <a th:if="${!#lists.isEmpty(confirmed) or !#lists.isEmpty(waiting)}"
+           th:href="@{/admin/events/{id}/reservations.csv(id=${event.id})}" class="btn">CSVダウンロード</a>
+    </div>
+
+    <!-- 出欠の集計（予約確定の人について）-->
+    <div class="attendance-summary" th:unless="${#lists.isEmpty(confirmed)}"
+         th:with="present=${#lists.size(confirmed.?[attended == true])},
+                  absent=${#lists.size(confirmed.?[attended == false])},
+                  total=${#lists.size(confirmed)}">
+        <span>出席 <strong th:text="${present}">8</strong></span>
+        <span>欠席 <strong th:text="${absent}">1</strong></span>
+        <span>未確認 <strong th:text="${total - present - absent}">3</strong></span>
+        <span>出席率 <strong th:text="${#numbers.formatDecimal(present * 100.0 / total, 1, 0)} + '%'">67%</strong></span>
+    </div>
+
+    <!-- 予約確定 -->
+    <h2 class="section-title">予約確定</h2>
+    <p th:if="${#lists.isEmpty(confirmed)}" class="empty">まだ予約はありません。</p>
+    <div th:unless="${#lists.isEmpty(confirmed)}" class="table-wrap card">
+        <table class="table">
+            <thead>
+            <tr><th>No.</th><th>氏名</th><th>出欠</th><th>フリガナ</th><th>メール</th><th>電話番号</th><th>学校名</th><th>備考</th><th>申込日時</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="r, st : ${confirmed}" th:id="'r' + ${r.id}">
+                <td data-label="No." th:text="${st.count}">1</td>
+                <td data-label="氏名">
+                    <div>
+                        <span th:text="${r.fullName}">山田 太郎</span>
+                        <span th:if="${r.promoted}" class="tag">繰り上げ</span>
+                    </div>
+                </td>
+                <!-- 出欠：押すたびにその状態で保存される。もう一度押すと未確認に戻る -->
+                <td data-label="出欠">
+                    <div class="attendance">
+                        <form th:action="@{/admin/reservations/{id}/attendance(id=${r.id})}" method="post" class="inline">
+                            <input type="hidden" name="value" th:value="${r.attended == true} ? 'clear' : 'present'">
+                            <button type="submit" class="att-btn att-present" th:classappend="${r.attended == true} ? 'is-on'"
+                                    th:attr="aria-pressed=${r.attended == true}">出席</button>
+                        </form>
+                        <form th:action="@{/admin/reservations/{id}/attendance(id=${r.id})}" method="post" class="inline">
+                            <input type="hidden" name="value" th:value="${r.attended == false} ? 'clear' : 'absent'">
+                            <button type="submit" class="att-btn att-absent" th:classappend="${r.attended == false} ? 'is-on'"
+                                    th:attr="aria-pressed=${r.attended == false}">欠席</button>
+                        </form>
+                    </div>
+                </td>
+                <td data-label="フリガナ" th:text="${r.fullNameKana}">ヤマダ タロウ</td>
+                <td data-label="メール" th:text="${r.member.email}">a@example.com</td>
+                <td data-label="電話番号" th:text="${r.phone}">090-1234-5678</td>
+                <td data-label="学校名" th:text="${r.school}">-</td>
+                <td data-label="備考" th:text="${r.note}">-</td>
+                <td data-label="申込日時" th:text="${#temporals.format(r.createdAt, 'M/d HH:mm')}">11/19 10:00</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- キャンセル待ち（この順番で繰り上がる）-->
+    <th:block th:unless="${#lists.isEmpty(waiting)}">
+        <h2 class="section-title">キャンセル待ち（上から順に繰り上がります）</h2>
+        <div class="table-wrap card">
+            <table class="table">
+                <thead>
+                <tr><th>順番</th><th>氏名</th><th>フリガナ</th><th>メール</th><th>電話番号</th><th>学校名</th><th>申込日時</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="r, st : ${waiting}">
+                    <td data-label="順番" th:text="${st.count} + '番目'">1番目</td>
+                    <td data-label="氏名" th:text="${r.fullName}">佐藤 花子</td>
+                    <td data-label="フリガナ" th:text="${r.fullNameKana}">サトウ ハナコ</td>
+                    <td data-label="メール" th:text="${r.member.email}">b@example.com</td>
+                    <td data-label="電話番号" th:text="${r.phone}">080-0000-0000</td>
+                    <td data-label="学校名" th:text="${r.school}">-</td>
+                    <td data-label="申込日時" th:text="${#temporals.format(r.createdAt, 'M/d HH:mm')}">11/19 11:00</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </th:block>
+</main>
+</body>
+</html>
